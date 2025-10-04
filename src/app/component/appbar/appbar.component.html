@@ -1,0 +1,98 @@
+<div class="flex flex-col min-h-screen">
+  <!-- Navbar -->
+  <div class="navbar sticky top-0 z-20 bg-base-100 border-b-2 border-base-200">
+    <div class="flex-1">
+      <a
+        class="btn btn-ghost hover:bg-base-100 text-blue-800"
+        [routerLink]="menuItems[0].link"
+      >
+        <img src="assets/images/dbkl-logo.png" alt="logo" class="h-12" />
+        DBKL PENILAIAN
+      </a>
+    </div>
+    <div class="flex-none space-x-4">
+      <!-- Add theme toggle and user profile dropdown here -->
+    </div>
+  </div>
+
+  <!-- Notification Bar -->
+  <div
+    class="w-full bg-gray-200 text-gray-800 text-center py-3 border-b-2 border-base-200 sticky top-16 z-10"
+  >
+    ⚠️ Important: Scheduled maintenance will occur on Friday at 10 PM.
+  </div>
+
+  <!-- Content Wrapper -->
+  <div class="flex">
+    <!-- Sidebar -->
+    <div
+      class="sidebar fixed h-screen top-18 w-64 bg-base-100 border-r-2 border-base-200"
+    >
+      <ul class="menu min-h-full gap-y-2 px-2">
+        <li *ngFor="let item of menuItems">
+          <a
+            *ngIf="!item.hasSubMenu"
+            [routerLink]="item.link"
+            class="font-medium text-md py-5"
+            [ngClass]="{ 'bg-base-200 dark:bg-primary': isActive(item.link) }"
+          >
+            {{ item.name }}
+          </a>
+          <details
+            [open]="isSubMenuActive(item)"
+            *ngIf="item.hasSubMenu"
+            class="py-10"
+          >
+            <summary
+              class="font-medium text-md"
+              [ngClass]="{
+                'bg-base-200 dark:bg-primary': isActive(item.link)
+              }"
+            >
+              {{ item.name }}
+            </summary>
+            <ul>
+              <li *ngFor="let subItem of item.subMenu">
+                <a
+                  class="font-medium"
+                  [routerLink]="subItem.link"
+                  [ngClass]="{
+                    'bg-base-200': isActive(subItem.link)
+                  }"
+                >
+                  {{ subItem.name }}
+                </a>
+              </li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 ml-64 p-4 bg-base-200">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* CSS for Fixed Sidebar */
+  .sidebar {
+    position: fixed;
+  }
+
+  .main-content {
+    margin-left: 16rem; /* Offset for the fixed sidebar width */
+  }
+
+  .notification-bar {
+    position: sticky;
+    top: 4rem; /* Below the navbar (adjust if navbar height changes) */
+    z-index: 10;
+    background-color: #e5e7eb; /* Tailwind gray-200 */
+    color: #1f2937; /* Tailwind gray-800 */
+    padding: 0.75rem;
+    border-bottom: 2px solid #e5e7eb; /* Adds visual separation */
+  }
+</style>
