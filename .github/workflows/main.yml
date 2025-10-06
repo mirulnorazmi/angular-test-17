@@ -1,0 +1,82 @@
+name: CI/CD - Build and Deploy Angular App via Fleet
+
+on:
+  push:
+    branches:
+      - main        # ✅ Trigger automatically on push to main
+  workflow_dispatch: # ✅ Allow manual trigger
+
+env:
+  IMAGE_NAME: angular-test
+  REGISTRY_URL: registry.smolelab.com
+  IMAGE_TAG: ${{ github.sha }}   # ✅ Short SHA for traceability
+
+jobs:
+  build:
+    runs-on: rke2-gh-runner        # ✅ Use your self-hosted runner (ARC in RKE2)
+    container:                    # ✅ Run inside a lightweight container
+      image: node:18-alpine       # 🪶 Small & efficient base image for Node builds
+
+    steps:
+      # 🧩 Step 1: Checkout your source code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 🧱 Step 2: Install dependencies and build Angular app
+      - name: Install & Build Angular
+        run: |
+          npm ci
+          npm run build -- --configuration production
+
+      # 🐳 Step 3: Install Docker CLI (Alpine does not have it by default)
+      - name: Install Docker CLI
+        run: |
+          apk add --no-cache docker-cli
+
+      # 🔐 Step 4: Authenticate to your private registry
+      - name: Log in to Private Docker Registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ env.REGISTRY_URL }} -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      # 🏗️ Step 5: Build and tag Docker image
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+
+      # 🚀 Step 6: Push Docker image to your registry
+      - name: Push Docker Image
+        run: docker push ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # ==================================================================
+      # CD: Trigger Fleet by updating deployment manifest in GitOps repo
+      # ==================================================================
+
+      # 🧩 Step 7: Checkout Fleet GitOps repo
+      - name: Checkout Fleet Repo
+        uses: actions/checkout@v4
+        with:
+          repository: smolelab/fleet-gitops-repo     # Replace with your actual repo
+          token: ${{ secrets.FLEET_GIT_PAT }}         # PAT with write access
+          path: fleet-repo
+
+      # 📝 Step 8: Update deployment image tag in Kubernetes manifest
+      - name: Update Deployment Image Tag
+        run: |
+          DEPLOYMENT_FILE="./fleet-repo/deploy/deployment.yaml"
+          echo "Updating image to ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          sed -i "s|image: .*/${{ env.IMAGE_NAME }}:.*|image: ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}|g" ${DEPLOYMENT_FILE}
+          cd fleet-repo
+          git diff
+
+      # ⚙️ Step 9: Commit and push to trigger Fleet
+      - name: Commit and Push Updated Manifests
+        run: |
+          cd fleet-repo
+          git config user.name "Fleet CI Bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add deploy/deployment.yaml
+          if git status --porcelain | grep -q 'deploy/deployment.yaml'; then
+            git commit -m "🚀 Deploy ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+            git push
+          else
+            echo "No changes to commit — skipping."
+          fi
