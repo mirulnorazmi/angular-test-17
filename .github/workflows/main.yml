@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: rke2-gh-runner        # ✅ Use your self-hosted runner (ARC in RKE2)
+    runs-on: rke2-gh-runner
     container:                    # ✅ Run inside a lightweight container
       image: node:18-alpine       # 🪶 Small & efficient base image for Node builds
 
