@@ -1,20 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
-  namespace: default
+  name: angular-test
+  namespace: test
+  labels:
+    app: angular-test
 spec:
-  replicas: 1
+  replicas: 1  # 👈 only one pod
   selector:
     matchLabels:
-      app: frontend
+      app: angular-test
   template:
     metadata:
       labels:
-        app: frontend
+        app: angular-test
     spec:
       containers:
-      - name: frontend
-        image: nginx:latest
-        ports:
-        - containerPort: 80
+        - name: angular-test
+          image: registry.smolelab.com/angular-test:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+      imagePullSecrets:
+        - name: regcred  # 👈 this should store your registry credentials
