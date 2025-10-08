@@ -37,3 +37,38 @@ jobs:
 
       - name: Push Docker Image
         run: docker push ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # ==================================================================
+      # CD: Trigger Fleet by updating deployment manifest in GitOps repo
+      # ==================================================================
+
+      # 🧩 Step 7: Checkout Fleet GitOps repo
+      - name: Checkout Fleet Repo
+        uses: actions/checkout@v4
+        with:
+          repository: smolelab/fleet-gitops-repo     # Replace with your actual repo
+          token: ${{ secrets.FLEET_GIT_PAT }}         # PAT with write access
+          path: fleet-repo
+
+      # 📝 Step 8: Update deployment image tag in Kubernetes manifest
+      - name: Update Deployment Image Tag
+        run: |
+          DEPLOYMENT_FILE="./fleet-repo/deploy/deployment.yaml"
+          echo "Updating image to ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          sed -i "s|image: .*/${{ env.IMAGE_NAME }}:.*|image: ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}|g" ${DEPLOYMENT_FILE}
+          cd fleet-repo
+          git diff
+
+      # ⚙️ Step 9: Commit and push to trigger Fleet
+      - name: Commit and Push Updated Manifests
+        run: |
+          cd fleet-repo
+          git config user.name "Fleet CI Bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add deploy/deployment.yaml
+          if git status --porcelain | grep -q 'deploy/deployment.yaml'; then
+            git commit -m "🚀 Deploy ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+            git push
+          else
+            echo "No changes to commit — skipping."
+          fi
