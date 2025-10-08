@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: rke2-gh-runner
+    runs-on: ubuntu-latest
     container:                    # ✅ Run inside a lightweight container
       image: node:18-alpine       # 🪶 Small & efficient base image for Node builds
 
