@@ -46,9 +46,9 @@ jobs:
       - name: Checkout Fleet Repo
         uses: actions/checkout@v4
         with:
-          repository: smolelab/fleet-gitops-repo     # Replace with your actual repo
+          repository: smolelab/angular-test-17     # Replace with your actual repo
           token: ${{ secrets.FLEET_GIT_PAT }}         # PAT with write access
-          path: fleet-repo
+          path: .fleet-repo/deploy
 
       # 📝 Step 8: Update deployment image tag in Kubernetes manifest
       - name: Update Deployment Image Tag
