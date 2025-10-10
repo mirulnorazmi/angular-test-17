@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: rke2-gh-runner
 
     steps:
       - name: Checkout Repository
