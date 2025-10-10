@@ -56,7 +56,7 @@ jobs:
           DEPLOYMENT_FILE="./fleet-repo/deploy/deployment.yaml"
           echo "Updating image to ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
           sed -i "s|image: .*/${{ env.IMAGE_NAME }}:.*|image: ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}|g" ${DEPLOYMENT_FILE}
-          cd fleet-repo
+          cd .fleet-repo
           git diff
 
       # ⚙️ Step 9: Commit and push to trigger Fleet
